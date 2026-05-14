@@ -207,16 +207,20 @@
 
   // ── Tableau Extensions init ────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
-    tableau.extensions.initializeAsync().then(() => {
-      console.log("Tableau Extensions API initialized.");
-      listenToFilters();
-      readCurrentFilters();
-    }).catch(err => {
-      console.warn("Running outside Tableau — filter sync disabled.", err);
-    });
+    if (typeof tableau !== "undefined") {
+        tableau.extensions.initializeAsync().then(() => {
+            console.log("Tableau Extensions API initialized.");
+            listenToFilters();
+            readCurrentFilters();
+        }).catch(err => {
+            console.warn("Tableau init failed.", err);
+        });
+    } else {
+        console.warn("Running outside Tableau — filter sync disabled.");
+    }
 
     pingServer();
-  });
+});
 
   function listenToFilters() {
     tableau.extensions.dashboardContent.dashboard.worksheets.forEach(ws => {
