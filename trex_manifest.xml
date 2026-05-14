@@ -12,7 +12,7 @@
         Production:  point to GitHub Pages URL, e.g.:
                      https://yourusername.github.io/fuel-chatbot/extension.html
       -->
-      <url>EXTENSION_URL_HERE</url>
+      <url>https://ionutsd.github.io/TableauCompetition/extension.html</url>
     </source-location>
     <icon>iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMdCjAQVSHVhgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAIElEQVQ4y2NgGAWjgB4AAQABAAEAAQABAAEAAQABAAEAAf8ABAABAAGABQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAA==</icon>
     <permissions>
