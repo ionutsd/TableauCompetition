@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <dashboard-extension id="com.yourname.fuelpricechatbot" extension-version="1.0.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name">Fuel Price Chatbot</name>
+    <description>AI-powered chatbot for global fuel price data using pandas + Gemini.</description>
+    <author name="Your Name" email="your@email.com" organization="Your Org" website="https://yoursite.com"/>
+    <min-api-version>1.7</min-api-version>
+    <source-location>
+      <!-- 
+        Development: point to local file (use full path or localhost server)
+        Production:  point to GitHub Pages URL, e.g.:
+                     https://yourusername.github.io/fuel-chatbot/extension.html
+      -->
+      <url>EXTENSION_URL_HERE</url>
+    </source-location>
+    <icon>iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QMdCjAQVSHVhgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAIElEQVQ4y2NgGAWjgB4AAQABAAEAAQABAAEAAQABAAEAAf8ABAABAAGABQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAA==</icon>
+    <permissions>
+      <permission>full data</permission>
+    </permissions>
+  </dashboard-extension>
+</manifest>

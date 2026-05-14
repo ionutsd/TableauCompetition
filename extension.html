@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fuel Price Chatbot</title>
+
+  <!-- Tableau Extensions API — use local copy if CDN is blocked on corporate network -->
+  <script src="https://cdn.jsdelivr.net/npm/@tableau/extensions-api@1.10.0/lib/tableau.extensions.1.latest.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6f9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #header {
+      background: #1a3a5c;
+      color: white;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    #header .title { font-size: 15px; font-weight: 600; }
+
+    #status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #f0ad4e;
+      flex-shrink: 0;
+    }
+    #status-dot.online  { background: #5cb85c; }
+    #status-dot.offline { background: #d9534f; }
+
+    #status-text { font-size: 11px; opacity: 0.8; margin-left: auto; }
+
+    #filter-bar {
+      background: #e8eef5;
+      padding: 6px 16px;
+      font-size: 12px;
+      color: #555;
+      border-bottom: 1px solid #cdd5df;
+      flex-shrink: 0;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      max-width: 88%;
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .msg.user {
+      background: #1a3a5c;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+
+    .msg.bot {
+      background: white;
+      color: #222;
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .msg.bot .engine-badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-pandas { background: #d4edda; color: #155724; }
+    .badge-gemini { background: #fff3cd; color: #856404; }
+    .badge-error  { background: #f8d7da; color: #721c24; }
+
+    .msg.thinking {
+      background: white;
+      color: #888;
+      align-self: flex-start;
+      font-style: italic;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    #input-area {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      background: white;
+      border-top: 1px solid #dde3ec;
+      flex-shrink: 0;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid #cdd5df;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    #user-input:focus { border-color: #1a3a5c; }
+
+    #send-btn {
+      background: #1a3a5c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #send-btn:hover:not(:disabled) { background: #234f7a; }
+
+    #suggestions {
+      padding: 0 16px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .suggestion-btn {
+      background: #eef2f7;
+      border: 1px solid #cdd5df;
+      border-radius: 14px;
+      padding: 4px 11px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #1a3a5c;
+    }
+
+    .suggestion-btn:hover { background: #dde6f0; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="status-dot"></div>
+  <span class="title">⛽ Fuel Price Chatbot</span>
+  <span id="status-text">Connecting…</span>
+</div>
+
+<div id="filter-bar">
+  🗓 Active year filter: <strong id="active-years">none (all years)</strong>
+</div>
+
+<div id="messages">
+  <div class="msg bot">
+    <span class="engine-badge badge-pandas">system</span><br>
+    Hello! Ask me anything about global fuel prices.<br>
+    Examples: <em>"Which country had the highest gasoline price in 2000?"</em> or <em>"Show the trend for Germany"</em>.
+  </div>
+</div>
+
+<div id="suggestions">
+  <button class="suggestion-btn" onclick="fillInput('Who had the cheapest gasoline in 2010?')">Cheapest gasoline 2010</button>
+  <button class="suggestion-btn" onclick="fillInput('Average diesel price for all countries in 2020')">Avg diesel 2020</button>
+  <button class="suggestion-btn" onclick="fillInput('Which countries are subsidized?')">Subsidized countries</button>
+  <button class="suggestion-btn" onclick="fillInput('Rank countries by gasoline price in 2023')">Rank 2023</button>
+  <button class="suggestion-btn" onclick="fillInput('Show the gasoline trend for France')">France trend</button>
+  <button class="suggestion-btn" onclick="fillInput('Which countries are major oil producers?')">Oil producers</button>
+</div>
+
+<div id="input-area">
+  <input id="user-input" type="text" placeholder="Ask about fuel prices…" />
+  <button id="send-btn" onclick="sendQuestion()">Send</button>
+</div>
+
+<script>
+  // ── Configuration ──────────────────────────────────────────────────────────
+  // Replace this with your Render.com URL after deployment
+  const API_BASE = "https://YOUR-APP-NAME.onrender.com";
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let activeYears = [];
+  let apiReady = false;
+
+  // ── Tableau Extensions init ────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+    tableau.extensions.initializeAsync().then(() => {
+      console.log("Tableau Extensions API initialized.");
+      listenToFilters();
+      readCurrentFilters();
+    }).catch(err => {
+      console.warn("Running outside Tableau — filter sync disabled.", err);
+    });
+
+    pingServer();
+  });
+
+  function listenToFilters() {
+    tableau.extensions.dashboardContent.dashboard.worksheets.forEach(ws => {
+      ws.addEventListener(
+        tableau.TableauEventType.FilterChanged,
+        () => readCurrentFilters()
+      );
+    });
+  }
+
+  function readCurrentFilters() {
+    const worksheets = tableau.extensions.dashboardContent.dashboard.worksheets;
+    if (!worksheets.length) return;
+
+    // Try to find a year filter on any worksheet
+    worksheets[0].getFiltersAsync().then(filters => {
+      const yearFilter = filters.find(f =>
+        f.fieldName.toLowerCase().includes("year")
+      );
+      if (yearFilter && yearFilter.appliedValues && yearFilter.appliedValues.length) {
+        activeYears = yearFilter.appliedValues.map(v => parseInt(v.value)).filter(n => !isNaN(n));
+      } else {
+        activeYears = [];
+      }
+      updateFilterBar();
+    }).catch(() => {});
+  }
+
+  function updateFilterBar() {
+    const el = document.getElementById("active-years");
+    el.textContent = activeYears.length
+      ? activeYears.join(", ")
+      : "none (all years)";
+  }
+
+  // ── Server health check ────────────────────────────────────────────────────
+  function pingServer() {
+    setStatus("Waking up server…", "");
+    fetch(`${API_BASE}/health`)
+      .then(r => r.json())
+      .then(data => {
+        apiReady = true;
+        setStatus(`Ready · ${data.rows.toLocaleString()} rows · ${data.countries} countries`, "online");
+      })
+      .catch(() => {
+        setStatus("Server offline — check Render.com", "offline");
+        // Retry after 30s (Render free tier cold start can take up to 60s)
+        setTimeout(pingServer, 30000);
+      });
+  }
+
+  function setStatus(text, dotClass) {
+    document.getElementById("status-text").textContent = text;
+    const dot = document.getElementById("status-dot");
+    dot.className = dotClass;
+  }
+
+  // ── Chat logic ─────────────────────────────────────────────────────────────
+  function fillInput(text) {
+    document.getElementById("user-input").value = text;
+    document.getElementById("user-input").focus();
+  }
+
+  document.getElementById("user-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") sendQuestion();
+  });
+
+  function sendQuestion() {
+    const input = document.getElementById("user-input");
+    const question = input.value.trim();
+    if (!question) return;
+
+    appendMessage(question, "user");
+    input.value = "";
+
+    const thinkingEl = appendMessage("Thinking…", "thinking");
+    document.getElementById("send-btn").disabled = true;
+
+    fetch(`${API_BASE}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, filter_years: activeYears }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        thinkingEl.remove();
+        appendBotMessage(data.answer, data.engine);
+      })
+      .catch(err => {
+        thinkingEl.remove();
+        appendBotMessage("Connection error. Is the server running?", "error");
+        console.error(err);
+      })
+      .finally(() => {
+        document.getElementById("send-btn").disabled = false;
+      });
+  }
+
+  function appendMessage(text, type) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = `msg ${type}`;
+    div.textContent = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function appendBotMessage(text, engine) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "msg bot";
+
+    const badge = document.createElement("span");
+    badge.className = `engine-badge badge-${engine === "error" ? "error" : engine}`;
+    badge.textContent = engine === "pandas" ? "pandas" : engine === "gemini" ? "gemini AI" : "error";
+
+    const br = document.createElement("br");
+    const content = document.createElement("span");
+
+    // Render **bold** markdown
+    content.innerHTML = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+    div.appendChild(badge);
+    div.appendChild(br);
+    div.appendChild(content);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+</script>
+</body>
+</html>
