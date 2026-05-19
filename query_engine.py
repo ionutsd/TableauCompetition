@@ -253,7 +253,7 @@ Question: {question}
     except requests.exceptions.Timeout:
         return "Gemini request timed out. Please try again."
     except Exception as e:
-        return f"Gemini error: {str(e)}"
+        return "Gemini is temporarily unavailable. Please try again later."
 
 
 # ---------------------------------------------------------------------------
