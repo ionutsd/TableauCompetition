@@ -7,8 +7,8 @@ from data_loader import load_data, COUNTRY_ALIASES, NUMERIC_COLS, get_column_con
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent?key={key}"
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+    GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 )
 
 # ---------------------------------------------------------------------------
