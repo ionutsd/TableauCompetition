@@ -207,50 +207,87 @@ def handle_specific_value(subset: pd.DataFrame, metric: str, country: str, years
 # ---------------------------------------------------------------------------
 
 def call_groq(question: str, subset: pd.DataFrame) -> str:
-    if not GROQ_API_KEY:
-        return "AI assistant not configured."
+    api_key = os.getenv("GROQ_API_KEY")
 
-    sample_size = min(60, len(subset))
-    sample = subset.sample(sample_size, random_state=42) if len(subset) > sample_size else subset
-    data_summary = sample[
-        ["year", "country", "region", "gasoline_usd_per_liter",
-         "diesel_usd_per_liter", "gasoline_real_2024usd",
-         "subsidy_regime", "price_tier", "is_oil_producer",
-         "tax_pct_of_pump_price"]
-    ].to_csv(index=False)
+    if not api_key:
+        return "Missing GROQ_API_KEY"
 
-    prompt = f"""You are a fuel price data analyst assistant.
-{get_column_context()}
-Here is a sample of the relevant data (CSV format):
-{data_summary}
-Answer the following question concisely and factually, based only on the data provided above.
-If you cannot answer from the data, say so clearly.
-Do not make up numbers.
-Question: {question}
-"""
+    if subset.empty:
+        return "Subset is empty before Groq call"
 
     try:
+        sample = subset.head(5)
+
+        data_summary = sample[
+            [
+                "year",
+                "country",
+                "gasoline_usd_per_liter"
+            ]
+        ].to_csv(index=False)
+
+        prompt = f"""
+You are a fuel price analyst.
+
+DATA:
+{data_summary}
+
+QUESTION:
+{question}
+"""
+
+        print("=== PROMPT ===")
+        print(prompt)
+
         resp = requests.post(
-            GROQ_URL,
+            "https://api.groq.com/openai/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama3-8b-8192",
-                "messages": [{"role": "user", "content": prompt}],
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
                 "temperature": 0.2,
-                "max_tokens": 400,
+                "max_tokens": 200
             },
-            timeout=15,
+            timeout=30
         )
+
+        print("=== STATUS ===")
+        print(resp.status_code)
+
+        print("=== RAW TEXT ===")
+        print(resp.text)
+
         resp.raise_for_status()
+
         data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()
-    except requests.exceptions.Timeout:
-        return "AI assistant timed out. Please try again."
+
+        print("=== JSON ===")
+        print(json.dumps(data, indent=2))
+
+        content = (
+            data
+            .get("choices", [{}])[0]
+            .get("message", {})
+            .get("content")
+        )
+
+        if not content:
+            return "Groq returned empty content"
+
+        return content.strip()
+
     except Exception as e:
-        return "AI assistant temporarily unavailable. Please try again later."
+        print("=== ERROR ===")
+        print(str(e))
+        return f"Groq error: {str(e)}"
 
 
 # ---------------------------------------------------------------------------
