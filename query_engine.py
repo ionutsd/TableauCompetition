@@ -254,7 +254,7 @@ QUESTION:
                     }
                 ],
                 "temperature": 0.2,
-                "max_tokens": 200
+                "max_tokens": 1200
             },
             timeout=30
         )
