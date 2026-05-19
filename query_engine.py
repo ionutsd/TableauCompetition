@@ -5,11 +5,8 @@ import requests
 import pandas as pd
 from data_loader import load_data, COUNTRY_ALIASES, NUMERIC_COLS, get_column_context
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_URL = (
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-    GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # ---------------------------------------------------------------------------
 # Helpers
