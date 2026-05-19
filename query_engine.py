@@ -329,5 +329,5 @@ def answer_question(question: str, filter_years: list[int] = None) -> dict:
                 "engine": "pandas", "filters": filters_used}
 
     # 6. Gemini fallback for everything else
-    gemini_answer = call_gemini(question, subset)
-    return {"answer": gemini_answer, "engine": "gemini", "filters": filters_used}
+    groq_answer = call_groq(question, subset)
+return {"answer": groq_answer, "engine": "gemini", "filters": filters_used}
