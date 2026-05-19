@@ -46,7 +46,15 @@ def ask(request: Request, body: QuestionRequest):
     )
     return QuestionResponse(**result)
 
-
+@app.get("/debug")
+def debug():
+    import os
+    key = os.getenv("GEMINI_API_KEY", "")
+    return {
+        "gemini_key_loaded": bool(key),
+        "key_length": len(key),
+        "key_preview": key[:4] + "..." if key else "empty"
+    }
 @app.get("/health")
 def health():
     df = load_data()
