@@ -216,7 +216,7 @@ def call_groq(question: str, subset: pd.DataFrame) -> str:
         return "Subset is empty before Groq call"
 
     try:
-        sample = subset.head(5)
+        sample = subset.head(101)
 
         data_summary = sample[
             [
