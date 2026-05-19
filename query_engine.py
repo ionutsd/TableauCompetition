@@ -206,11 +206,10 @@ def handle_specific_value(subset: pd.DataFrame, metric: str, country: str, years
 # Gemini fallback
 # ---------------------------------------------------------------------------
 
-def call_gemini(question: str, subset: pd.DataFrame) -> str:
-    if not GEMINI_API_KEY:
-        return "Gemini API key not configured. Please set the GEMINI_API_KEY environment variable."
+def call_groq(question: str, subset: pd.DataFrame) -> str:
+    if not GROQ_API_KEY:
+        return "AI assistant not configured."
 
-    # Build a compact data summary to send — never send the full CSV
     sample_size = min(60, len(subset))
     sample = subset.sample(sample_size, random_state=42) if len(subset) > sample_size else subset
     data_summary = sample[
@@ -222,35 +221,36 @@ def call_gemini(question: str, subset: pd.DataFrame) -> str:
 
     prompt = f"""You are a fuel price data analyst assistant.
 {get_column_context()}
-
 Here is a sample of the relevant data (CSV format):
 {data_summary}
-
 Answer the following question concisely and factually, based only on the data provided above.
 If you cannot answer from the data, say so clearly.
 Do not make up numbers.
-
 Question: {question}
 """
 
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 400},
-    }
-
     try:
         resp = requests.post(
-            GEMINI_URL.format(key=GEMINI_API_KEY),
-            json=payload,
+            GROQ_URL,
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama3-8b-8192",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 400,
+            },
             timeout=15,
         )
         resp.raise_for_status()
         data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return data["choices"][0]["message"]["content"].strip()
     except requests.exceptions.Timeout:
-        return "Gemini request timed out. Please try again."
+        return "AI assistant timed out. Please try again."
     except Exception as e:
-        return "Gemini is temporarily unavailable. Please try again later."
+        return "AI assistant temporarily unavailable. Please try again later."
 
 
 # ---------------------------------------------------------------------------
